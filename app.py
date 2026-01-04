@@ -7,7 +7,7 @@ import pandas as pd
 st.set_page_config(page_title="Nuclear Shielding Lab", layout="wide")
 
 # --- MATERIALS DATABASE ---
-# Verified Keys for 1.0 MeV Gamma Analysis
+# Ensure these names match EXACTLY what is used in the multiselect default below
 MATERIALS = {
     "Lead (Pb)": {"mu": 0.771, "density": 11.34, "color": "#7f8c8d", "b_slope": 1.2},
     "Tungsten Heavy Alloy (WHA)": {"mu": 1.250, "density": 18.50, "color": "#2c3e50", "b_slope": 1.1},
@@ -21,7 +21,7 @@ MATERIALS = {
     "Tantalum (Ta)": {"mu": 0.950, "density": 16.69, "color": "#9b59b6", "b_slope": 1.15}
 }
 
-st.title(" Nuclear Shielding Design Suite")
+st.title("🛡️ Nuclear Shielding Design Suite")
 st.markdown("### Broad-Beam Attenuation & Structural Logistics")
 
 # --- SIDEBAR ---
@@ -31,7 +31,7 @@ max_thick = st.sidebar.slider("Max Analysis Thickness (cm)", 10, 100, 50)
 # --- PHYSICS ENGINE ---
 def calculate_attenuation(thickness_range, mu, b_slope):
     mfp = mu * thickness_range
-    B = 1 + (b_slope * mfp)  # Linear Build-up Factor
+    B = 1 + (b_slope * mfp)  # Linear Build-up Factor approximation
     return B * np.exp(-mfp)
 
 # --- ANALYSIS TABS ---
@@ -40,17 +40,19 @@ tab_compare, tab_structural, tab_safety = st.tabs([" Performance Curves", " Mass
 with tab_compare:
     st.header("Material Attenuation Analysis")
     
-    # SAFE SELECTION LOGIC: This prevents the StreamlitAPIException
-    available_options = list(MATERIALS.keys())
-    default_vals = ["Lead (Pb)", "Tungsten Heavy Alloy (WHA)", "Iron (Fe)", "Concrete (Standard)"]
+    # 1. Get all available keys
+    all_options = list(MATERIALS.keys())
     
-    # Double-check that defaults actually exist in options to prevent crashes
-    validated_defaults = [d for d in default_vals if d in available_options]
+    # 2. Define your desired defaults (MATCH THESE TO THE DICTIONARY ABOVE)
+    desired_defaults = ["Lead (Pb)", "Tungsten Heavy Alloy (WHA)", "Iron (Fe)", "Concrete (Standard)"]
+    
+    # 3. SAFETY CHECK: Only include defaults that actually exist in the options list
+    safe_defaults = [item for item in desired_defaults if item in all_options]
 
     selected_mats = st.multiselect(
         "Select Materials to Compare:", 
-        options=available_options, 
-        default=validated_defaults
+        options=all_options, 
+        default=safe_defaults
     )
     
     if selected_mats:
@@ -93,7 +95,7 @@ with tab_structural:
     
     col1, col2 = st.columns(2)
     with col1:
-        target_mat = st.selectbox("Analyze Material:", available_options)
+        target_mat = st.selectbox("Analyze Material:", all_options)
         target_thick = st.slider("Design Thickness (cm)", 1, max_thick, 10)
     
     with col2:
@@ -129,7 +131,7 @@ with tab_safety:
     ### Shielding Integrity Instructions:
     1. **Avoid Direct Paths:** Never design shielding with straight-through gaps for cables or pipes. Use 'Z-plugs' or 'Dog-legs'.
     2. **Material Uniformity:** Ensure cast materials like Concrete have no air pockets (voids), which allow radiation 'streaming'.
-    3. **Secondary Effects:** High-Z materials like Lead can produce secondary X-rays (Fluorescence). Ensure a low-Z 'cladding' is used if necessary.
+    3. **Secondary Effects:** High-Z materials like Lead can produce secondary X-rays (Fluorescence).
     
     ### Disclaimer
     This tool is for **Preliminary Design Estimation**. Final shielding for nuclear facilities must be verified using 3D Monte Carlo simulations (MCNP/GEANT4).
